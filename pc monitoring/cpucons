@@ -1,0 +1,48 @@
+from kafka import KafkaConsumer
+import json
+import sqlite3
+
+# --- Configuración ---
+KAFKA_BROKER = 'localhost:9092'
+TOPIC_NAME = 'metricas_sistema'
+GRUPO_CONSUMIDORES = 'grupo-monitoreo'
+DB_NOMBRE = 'C:\\Users\\Usuario\\Desktop\\sqlite-tools-win-x64-3470200\\metricas.db'
+
+# --- Base de datos SQLite ---
+conn = sqlite3.connect(DB_NOMBRE)
+cursor = conn.cursor()
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS metricas (
+        timestamp TEXT,
+        cpu_percent REAL,
+        mem_total INTEGER,
+        mem_available INTEGER,
+        mem_percent REAL,
+        disk_total INTEGER,
+        disk_used INTEGER,
+        disk_percent REAL
+    )
+''')
+conn.commit()
+
+# --- Consumidor de Kafka ---
+consumer = KafkaConsumer(
+    TOPIC_NAME,
+    bootstrap_servers=KAFKA_BROKER,
+    group_id=GRUPO_CONSUMIDORES,
+    value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+)
+
+def almacenar_metricas(metricas):
+    cursor.execute("INSERT INTO metricas VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                   (metricas['timestamp'], metricas['cpu_percent'], metricas['mem_total'],
+                    metricas['mem_available'], metricas['mem_percent'], metricas['disk_total'],
+                    metricas['disk_used'], metricas['disk_percent']))
+    conn.commit()
+    print(f"Métricas almacenadas en SQLite: {metricas}")
+
+if __name__ == '__main__':
+    print("Iniciando consumidor y almacenamiento en SQLite...")
+    for mensaje in consumer:
+        metricas = mensaje.value
+        almacenar_metricas(metricas)
