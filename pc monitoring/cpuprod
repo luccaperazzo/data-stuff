@@ -1,0 +1,44 @@
+from kafka import KafkaProducer
+import psutil
+import time
+import json
+import datetime
+
+# --- Configuración ---
+KAFKA_BROKER = 'localhost:9092'
+TOPIC_NAME = 'metricas_sistema'
+INTERVALO_LECTURAS = 5  # Segundos
+
+# --- Productor de Kafka ---
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+def obtener_metricas():
+    cpu_percent = psutil.cpu_percent(interval=1)
+    mem = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')  # Cambia '/' por la partición que quieras monitorizar
+
+    metricas = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'cpu_percent': cpu_percent,
+        'mem_total': mem.total,
+        'mem_available': mem.available,
+        'mem_percent': mem.percent,
+        'disk_total': disk.total,
+        'disk_used': disk.used,
+        'disk_percent': disk.percent,
+    }
+    return metricas
+
+def publicar_metricas():
+    metricas = obtener_metricas()
+    producer.send(TOPIC_NAME, value=metricas)
+    print(f"Métricas enviadas: {metricas}")
+
+if __name__ == '__main__':
+    print("Iniciando productor de métricas del sistema...")
+    while True:
+        publicar_metricas()
+        time.sleep(INTERVALO_LECTURAS)
