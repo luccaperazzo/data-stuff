@@ -2,13 +2,11 @@ from kafka import KafkaConsumer
 import json
 import sqlite3
 
-# --- Configuración ---
 KAFKA_BROKER = 'localhost:9092'
 TOPIC_NAME = 'metricas_sistema'
 GRUPO_CONSUMIDORES = 'grupo-monitoreo'
 DB_NOMBRE = 'C:\\Users\\Usuario\\Desktop\\sqlite-tools-win-x64-3470200\\metricas.db'
 
-# --- Base de datos SQLite ---
 conn = sqlite3.connect(DB_NOMBRE)
 cursor = conn.cursor()
 cursor.execute('''
@@ -25,7 +23,6 @@ cursor.execute('''
 ''')
 conn.commit()
 
-# --- Consumidor de Kafka ---
 consumer = KafkaConsumer(
     TOPIC_NAME,
     bootstrap_servers=KAFKA_BROKER,
