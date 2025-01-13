@@ -4,12 +4,10 @@ import time
 import json
 import datetime
 
-# --- Configuración ---
 KAFKA_BROKER = 'localhost:9092'
 TOPIC_NAME = 'metricas_sistema'
 INTERVALO_LECTURAS = 5  # Segundos
 
-# --- Productor de Kafka ---
 producer = KafkaProducer(
     bootstrap_servers=KAFKA_BROKER,
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
