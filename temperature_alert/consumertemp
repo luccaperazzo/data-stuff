@@ -1,0 +1,31 @@
+from kafka import KafkaConsumer
+import json
+
+ --- config ---
+KAFKA_BROKER = 'localhost:9092'
+TOPIC_NAME = 'temperatura'
+GRUPO_CONSUMIDORES = 'grupo-alertas'
+TEMPERATURA_UMBRAL = 29  # Temperatura a partir de la cual se genera una alerta
+
+consumer = KafkaConsumer(
+    TOPIC_NAME,
+    bootstrap_servers=KAFKA_BROKER,
+    group_id=GRUPO_CONSUMIDORES,
+    value_deserializer=lambda m: json.loads(m.decode('utf-8'))  
+)
+
+def generar_alerta(mensaje):
+    print("-" * 30)
+    print(f"¡ALERTA! Temperatura alta detectada:")
+    print(f"  Sensor: {mensaje['sensor_id']}")
+    print(f"  Timestamp: {mensaje['timestamp']}")
+    print(f"  Temperatura: {mensaje['temperatura']}")
+    print("-" * 30)
+
+
+if __name__ == '__main__':
+    print("Iniciando consumidor...")
+    for mensaje in consumer:
+        datos_mensaje = mensaje.value
+        if datos_mensaje['temperatura'] > TEMPERATURA_UMBRAL:
+            generar_alerta(datos_mensaje)
