@@ -1,0 +1,40 @@
+from kafka import KafkaProducer
+import time
+import random
+import json
+
+# --- config ---
+KAFKA_BROKER = 'localhost:9092' 
+TOPIC_NAME = 'temperatura'
+INTERVALO_LECTURAS = 2  #
+
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')  
+)
+
+def simular_temperatura():
+    temperatura_base = 25
+    variacion = random.uniform(-3, 5)  # Variación aleatoria de temperatura
+    temperatura = temperatura_base + variacion
+    return temperatura
+
+def publicar_lectura(sensor_id):
+    temperatura = simular_temperatura()
+    timestamp = time.time()
+
+    mensaje = {
+        'sensor_id': sensor_id,
+        'timestamp': timestamp,
+        'temperatura': temperatura
+    }
+
+    producer.send(TOPIC_NAME, value=mensaje)
+    print(f"Mensaje enviado: {mensaje}")
+
+if __name__ == '__main__':
+    sensor_id = 'sensor-1'  # ID del sensor
+    print(f"Iniciando simulador de sensor: {sensor_id}")
+    while True:
+        publicar_lectura(sensor_id)
+        time.sleep(INTERVALO_LECTURAS)
